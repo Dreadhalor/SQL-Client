@@ -321,7 +321,7 @@ var Table = /** @class */ (function () {
         var _this = this;
         var columns = [];
         var pk = this.primaryKey();
-        pk.value = id;
+        pk.value = JSON.stringify(id);
         columns.push(pk);
         return fse.readFile(this.tablesDirectory + "/" + this.tableName + "/pull_by_id_" + this.tableName + ".sql", 'utf8')
             .then(function (query) { return _this.db.prepareQueryFromColumnsAndExecute(query, columns); })
@@ -339,7 +339,7 @@ var Table = /** @class */ (function () {
         var _this = this;
         var columns = [];
         var pk = this.primaryKey();
-        pk.value = id;
+        pk.value = JSON.stringify(id);
         columns.push(pk);
         return fse.readFile(this.tablesDirectory + "/" + this.tableName + "/delete_by_id_" + this.tableName + ".sql", 'utf8')
             .then(function (query) { return _this.db.prepareQueryFromColumnsAndExecute(query, columns); })
@@ -362,7 +362,7 @@ var Table = /** @class */ (function () {
         var _this = this;
         var columns = [];
         var pk = this.primaryKey();
-        pk.value = id;
+        pk.value = JSON.stringify(id);
         columns.push(pk);
         return fse.readFile(this.tablesDirectory + "/" + this.tableName + "/delete_by_id_" + this.tableName + ".sql", 'utf8')
             .then(function (query) { return _this.db.prepareQueryFromColumnsAndExecute(query, columns); })

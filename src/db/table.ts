@@ -259,7 +259,7 @@ export class Table {
   findById(id: string){
     let columns = [];
     let pk = this.primaryKey();
-    pk.value = id;
+    pk.value = JSON.stringify(id);
     columns.push(pk);
     return fse.readFile(`${this.tablesDirectory}/${this.tableName}/pull_by_id_${this.tableName}.sql`,'utf8')
       .then(query => this.db.prepareQueryFromColumnsAndExecute(query,columns))
@@ -275,7 +275,7 @@ export class Table {
   deleteById(id: string, agent?){
     let columns = [];
     let pk = this.primaryKey();
-    pk.value = id;
+    pk.value = JSON.stringify(id);
     columns.push(pk);
     return fse.readFile(`${this.tablesDirectory}/${this.tableName}/delete_by_id_${this.tableName}.sql`,'utf8')
       .then(query => this.db.prepareQueryFromColumnsAndExecute(query,columns))
@@ -296,7 +296,7 @@ export class Table {
   deleteSingularById(id: string){
     let columns = [];
     let pk = this.primaryKey();
-    pk.value = id;
+    pk.value = JSON.stringify(id);
     columns.push(pk);
     return fse.readFile(`${this.tablesDirectory}/${this.tableName}/delete_by_id_${this.tableName}.sql`,'utf8')
       .then(query => this.db.prepareQueryFromColumnsAndExecute(query,columns))
