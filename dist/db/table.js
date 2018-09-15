@@ -50,7 +50,7 @@ var Table = /** @class */ (function () {
         this.tablesDirectory = path.resolve(__dirname, 'scripts/generated/tables');
         this.update = new rxjs_1.Subject();
         this.db = db;
-        this.tableName = schema.tableName;
+        this.tableName = schema.name;
         schema.columns.forEach(function (column) {
             _this.columns.push({
                 name: column.name,
