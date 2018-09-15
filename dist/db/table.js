@@ -206,7 +206,7 @@ var Table = /** @class */ (function () {
         var columns = this.columns.map(function (column) {
             //DEEP COPYING NECESSARY FOR CLOSELY-SPACED EDITS
             column = Table.deepCopy(column);
-            column.value = JSON.stringify(obj[column.name]);
+            column.value = obj[column.name];
             return column;
         });
         return columns;
