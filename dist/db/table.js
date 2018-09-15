@@ -54,7 +54,6 @@ var Table = /** @class */ (function () {
         schema.columns.forEach(function (column) {
             _this.columns.push({
                 name: column.name,
-                dataType: column.dataType,
                 primary: !!column.primary
             });
         });

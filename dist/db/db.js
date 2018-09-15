@@ -63,7 +63,7 @@ var Database;
     var parseDataType = exports.parseDataType = datatypeParser.parseDataType;
     var preparedStatementWithInputs3 = function (info) {
         var ps = new sql.PreparedStatement();
-        info.columns.forEach(function (column) { return ps.input(column.name, parseDataType(column.dataType, false)); });
+        info.columns.forEach(function (column) { return ps.input(column.name, parseDataType('string', false)); });
         return ps;
     };
     var formatPreparedValues2 = function (info) {
@@ -85,7 +85,7 @@ var Database;
     var prepareStatementFromColumns = exports.prepareStatementFromColumns = function (columns) {
         var ps = new sql.PreparedStatement();
         columns.forEach(function (column) {
-            ps.input(column.name, parseDataType(column.dataType, false));
+            ps.input(column.name, parseDataType('string', false));
         });
         return ps;
     };

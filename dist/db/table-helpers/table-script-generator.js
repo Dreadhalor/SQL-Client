@@ -53,7 +53,7 @@ var TableScriptGenerator;
         };
         var tableInitFields = '';
         data.columns.forEach(function (column, index) {
-            tableInitFields += "[" + column.name + "] " + data.database.parseDataType(column.dataType, true);
+            tableInitFields += "[" + column.name + "] " + data.database.parseDataType('string', true);
             if (index < data.columns.length - 1)
                 tableInitFields += ",\n\t\t";
         });

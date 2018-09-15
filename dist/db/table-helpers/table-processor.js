@@ -5,7 +5,7 @@ var TableProcessor = /** @class */ (function () {
         this.table = table;
     }
     TableProcessor.prototype.shouldStringify = function (column) {
-        return column.dataType.includes('[]') || column.dataType == 'object';
+        return true; //column.dataType.includes('[]') || column.dataType == 'object';
     };
     TableProcessor.prototype.processRecordsets = function (result) {
         if (result &&
