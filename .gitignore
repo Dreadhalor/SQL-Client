@@ -1,1 +1,2 @@
-/dist/db/scripts/generated/
+/node_modules
+/dist/db/scripts/generated

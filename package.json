@@ -3,6 +3,9 @@
   "version": "1.1.0",
   "description": "A client to make interacting with a SQL database easy.",
   "main": "dist/index.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "tsc": "tsc",
@@ -21,7 +24,7 @@
   },
   "homepage": "https://github.com/Dreadhalor/SQL-Client#readme",
   "dependencies": {
-    "@dreadhalor/bluebird-plus": "^1.0.3",
+    "@dreadhalor/bluebird-plus": "^1.0.4",
     "fs-extra": "^7.0.0",
     "msnodesqlv8": "^0.6.8",
     "mssql": "^4.2.1",
