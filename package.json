@@ -4,7 +4,10 @@
   "description": "A client to make interacting with a SQL database easy.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch-ts": "tsc -w",
+    "watch-node": "nodemon dist/index.js",
+    "watch": "concurrently -k -p \"[{name}]\" -n \"TypeScript, Node\" -c \"yello.bold, cyan.bold\" \"yarn run watch-ts\" \"yarn run watch-node\""
   },
   "repository": {
     "type": "git",
@@ -15,5 +18,15 @@
   "bugs": {
     "url": "https://github.com/Dreadhalor/SQL-Client/issues"
   },
-  "homepage": "https://github.com/Dreadhalor/SQL-Client#readme"
+  "homepage": "https://github.com/Dreadhalor/SQL-Client#readme",
+  "dependencies": {
+    "@dreadhalor/bluebird-plus": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^10.9.4",
+    "concurrently": "^4.0.1",
+    "nodemon": "^1.18.4",
+    "typescript": "^3.0.3",
+    "yarn": "^1.9.4"
+  }
 }
