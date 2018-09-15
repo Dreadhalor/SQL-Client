@@ -41,26 +41,17 @@ var PromisePlus = require('@dreadhalor/bluebird-plus');
 var scriptGenerator = require('./table-helpers/table-script-generator');
 var table_processor_1 = require("./table-helpers/table-processor");
 var path = require("path");
-var Table = /** @class */ (function () {
-    function Table(db, schema) {
-        var _this = this;
-        this.columns = [];
+var SQLTable = /** @class */ (function () {
+    function SQLTable(db, schema) {
         this.processor = new table_processor_1.TableProcessor(this);
         this.templateDirectory = path.resolve(__dirname, 'scripts/templates/tables');
         this.tablesDirectory = path.resolve(__dirname, 'scripts/generated/tables');
         this.update = new rxjs_1.Subject();
         this.db = db;
-        this.tableName = schema.name;
-        schema.columns.forEach(function (column) {
-            _this.columns.push({
-                name: column.name,
-                primary: !!column.primary
-            });
-        });
-        this.columns = this.singularizePrimaryKey(this.columns);
+        this.schema = schema;
         this.constructTable();
     }
-    Table.prototype.getTemplateFiles = function () {
+    SQLTable.prototype.getTemplateFiles = function () {
         var _this = this;
         var names;
         var files = {};
@@ -80,7 +71,7 @@ var Table = /** @class */ (function () {
             return files;
         });
     };
-    Table.prototype.findRunOrder = function (singleFileContents) {
+    SQLTable.prototype.findRunOrder = function (singleFileContents) {
         var runOrderKey = 'RUN-ORDER ';
         try {
             var trimmed = singleFileContents.substring(singleFileContents.indexOf(runOrderKey));
@@ -95,7 +86,7 @@ var Table = /** @class */ (function () {
             return -1;
         }
     };
-    Object.defineProperty(Table.prototype, "templateFilesMapped", {
+    Object.defineProperty(SQLTable.prototype, "templateFilesMapped", {
         get: function () {
             return this.getTemplateFiles()
                 .then(function (files) {
@@ -108,7 +99,7 @@ var Table = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(Table.prototype, "templateFilesInRunOrder", {
+    Object.defineProperty(SQLTable.prototype, "templateFilesInRunOrder", {
         get: function () {
             var queue = [];
             return this.getTemplateFiles()
@@ -137,14 +128,14 @@ var Table = /** @class */ (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(Table.prototype, "destDirectory", {
+    Object.defineProperty(SQLTable.prototype, "destDirectory", {
         get: function () {
-            return this.tablesDirectory + "/" + this.tableName;
+            return this.tablesDirectory + "/" + this.schema.name;
         },
         enumerable: true,
         configurable: true
     });
-    Table.prototype.constructTable = function () {
+    SQLTable.prototype.constructTable = function () {
         return __awaiter(this, void 0, void 0, function () {
             var scripts, scriptFiles, _a, _b, _c;
             var _this = this;
@@ -154,8 +145,7 @@ var Table = /** @class */ (function () {
                         _b = (_a = scriptGenerator).generateScripts;
                         _c = {
                             database: this.db,
-                            tableName: this.tableName,
-                            columns: this.columns,
+                            schema: this.schema,
                             templateDirectory: this.templateDirectory
                         };
                         return [4 /*yield*/, this.templateFilesMapped];
@@ -181,7 +171,7 @@ var Table = /** @class */ (function () {
             });
         });
     };
-    Table.prototype.singularizePrimaryKey = function (columns) {
+    SQLTable.prototype.singularizePrimaryKey = function (columns) {
         var primary = false;
         for (var i = 0; i < columns.length; i++) {
             if (columns[i].primary) {
@@ -192,32 +182,24 @@ var Table = /** @class */ (function () {
         }
         return columns;
     };
-    Table.prototype.primaryKey = function () {
-        var pk = Table.deepCopy(this.columns.find(function (match) { return match.primary; }));
-        return pk;
+    SQLTable.prototype.primaryKey = function (value) {
+        if (value)
+            return {
+                name: this.schema.primary,
+                value: value
+            };
+        return this.schema.primary;
     };
-    Table.prototype.fields = function () {
-        return this.columns.map(function (column) { return column.name; });
-    };
-    Table.prototype.oneHotPrimaryKeyArray = function () {
-        return this.columns.map(function (column) { return column.primary; });
-    };
-    Table.prototype.formatRow = function (obj) {
-        var columns = this.columns.map(function (column) {
-            //DEEP COPYING NECESSARY FOR CLOSELY-SPACED EDITS
-            column = Table.deepCopy(column);
-            column.value = obj[column.name];
-            return column;
+    SQLTable.prototype.formatRow = function (obj) {
+        var columns = this.schema.columns.map(function (columnName) {
+            return {
+                name: columnName,
+                value: obj[columnName]
+            };
         });
         return columns;
     };
-    Table.prototype.tableInfo = function () {
-        return {
-            tableName: this.tableName,
-            columns: this.columns.map(function (column) { return Table.deepCopy(column); })
-        };
-    };
-    Table.prototype.equals = function (array1, array2) {
+    SQLTable.prototype.equals = function (array1, array2) {
         var a1 = array1.length, a2 = array2.length;
         if (a1 != a2)
             return false;
@@ -227,18 +209,18 @@ var Table = /** @class */ (function () {
         }
         return true;
     };
-    Table.prototype.saveSingular = function (item) {
+    SQLTable.prototype.saveSingular = function (item) {
         var _this = this;
         if (!item)
             throw 'Item is null';
         var itemKeys = Object.keys(item);
-        if (this.equals(itemKeys, this.fields())) {
+        if (this.equals(itemKeys, this.schema.columns)) {
             var formattedItem = this.processor.formatObject(item);
             var info_1 = {
-                tableName: this.tableName,
+                tableName: this.schema.name,
                 columns: this.formatRow(formattedItem)
             };
-            return fse.readFile(this.tablesDirectory + "/" + this.tableName + "/save_" + this.tableName + ".sql", 'utf8')
+            return fse.readFile(this.tablesDirectory + "/" + this.schema.name + "/save_" + this.schema.name + ".sql", 'utf8')
                 .then(function (file) { return _this.db.prepareQueryAndExecute(file, info_1); })
                 .then(function (executed) { return _this.processor.processRecordsets(executed); })
                 .then(function (processed) {
@@ -259,7 +241,7 @@ var Table = /** @class */ (function () {
         }
         throw 'Item properties are incorrect.';
     };
-    Table.prototype.saveMultiple = function (items) {
+    SQLTable.prototype.saveMultiple = function (items) {
         var _this = this;
         if (!items)
             throw 'Item is null';
@@ -304,12 +286,12 @@ var Table = /** @class */ (function () {
             return result;
         });
     };
-    Table.prototype.save = function (items, agent) {
+    SQLTable.prototype.save = function (items, agent) {
         var _this = this;
         return this.saveMultiple(items)
             .then(function (result) {
             if (result) {
-                result.table = _this.tableName;
+                result.table = _this.schema.name;
                 if (agent)
                     result.agent = agent;
                 _this.update.next(result);
@@ -317,38 +299,36 @@ var Table = /** @class */ (function () {
             return result;
         });
     };
-    Table.prototype.findById = function (id) {
+    SQLTable.prototype.findById = function (id) {
         var _this = this;
         var columns = [];
-        var pk = this.primaryKey();
-        pk.value = JSON.stringify(id);
+        var pk = this.primaryKey(JSON.stringify(id));
         columns.push(pk);
-        return fse.readFile(this.tablesDirectory + "/" + this.tableName + "/pull_by_id_" + this.tableName + ".sql", 'utf8')
+        return fse.readFile(this.tablesDirectory + "/" + this.schema.name + "/pull_by_id_" + this.schema.name + ".sql", 'utf8')
             .then(function (query) { return _this.db.prepareQueryFromColumnsAndExecute(query, columns); })
             .then(function (found) {
             return _this.processor.processRecordsets(found)[0];
         });
     };
-    Table.prototype.pullAll = function () {
+    SQLTable.prototype.pullAll = function () {
         var _this = this;
-        return fse.readFile(this.tablesDirectory + "/" + this.tableName + "/pull_all_" + this.tableName + ".sql", 'utf8')
+        return fse.readFile(this.tablesDirectory + "/" + this.schema.name + "/pull_all_" + this.schema.name + ".sql", 'utf8')
             .then(function (query) { return _this.db.executeQueryAsPreparedStatement(query); })
             .then(function (pulled) { return _this.processor.processRecordsets(pulled); });
     };
-    Table.prototype.deleteById = function (id, agent) {
+    SQLTable.prototype.deleteById = function (id, agent) {
         var _this = this;
         var columns = [];
-        var pk = this.primaryKey();
-        pk.value = JSON.stringify(id);
+        var pk = this.primaryKey(JSON.stringify(id));
         columns.push(pk);
-        return fse.readFile(this.tablesDirectory + "/" + this.tableName + "/delete_by_id_" + this.tableName + ".sql", 'utf8')
+        return fse.readFile(this.tablesDirectory + "/" + this.schema.name + "/delete_by_id_" + this.schema.name + ".sql", 'utf8')
             .then(function (query) { return _this.db.prepareQueryFromColumnsAndExecute(query, columns); })
             .then(function (deleted) { return _this.processor.processRecordsets(deleted); })
             .then(function (processed) {
             var array = [];
             array.push(processed[0]);
             var result = {
-                table: _this.tableName,
+                table: _this.schema.name,
                 operation: 'delete',
                 deleted: array
             };
@@ -358,13 +338,12 @@ var Table = /** @class */ (function () {
             return result;
         });
     };
-    Table.prototype.deleteSingularById = function (id) {
+    SQLTable.prototype.deleteSingularById = function (id) {
         var _this = this;
         var columns = [];
-        var pk = this.primaryKey();
-        pk.value = JSON.stringify(id);
+        var pk = this.primaryKey(JSON.stringify(id));
         columns.push(pk);
-        return fse.readFile(this.tablesDirectory + "/" + this.tableName + "/delete_by_id_" + this.tableName + ".sql", 'utf8')
+        return fse.readFile(this.tablesDirectory + "/" + this.schema.name + "/delete_by_id_" + this.schema.name + ".sql", 'utf8')
             .then(function (query) { return _this.db.prepareQueryFromColumnsAndExecute(query, columns); })
             .then(function (deleted) { return _this.processor.processRecordsets(deleted); })
             .then(function (processed) {
@@ -375,7 +354,7 @@ var Table = /** @class */ (function () {
             return result;
         });
     };
-    Table.prototype.deleteMultipleByIds = function (ids) {
+    SQLTable.prototype.deleteMultipleByIds = function (ids) {
         var _this = this;
         if (ids) {
             if (!Array.isArray(ids)) {
@@ -402,7 +381,7 @@ var Table = /** @class */ (function () {
         else
             throw 'No items specified to delete.';
     };
-    Table.prototype.merge = function (items, agent) {
+    SQLTable.prototype.merge = function (items, agent) {
         var _this = this;
         if (items) {
             var toSave = items.toSave;
@@ -428,7 +407,7 @@ var Table = /** @class */ (function () {
                     else if (deleted_1)
                         result_1 = deleted_1;
                     if (result_1) {
-                        result_1.table = _this.tableName;
+                        result_1.table = _this.schema.name;
                         if (agent)
                             result_1.agent = agent;
                         _this.update.next(result_1);
@@ -442,7 +421,7 @@ var Table = /** @class */ (function () {
         else
             throw 'No items to modify.';
     };
-    Table.deepCopy = function (obj) {
+    SQLTable.deepCopy = function (obj) {
         var copy;
         // Handle the 3 simple types, and null or undefined
         if (null == obj || "object" != typeof obj)
@@ -472,7 +451,7 @@ var Table = /** @class */ (function () {
         }
         throw new Error("Unable to copy obj! Its type isn't supported.");
     };
-    return Table;
+    return SQLTable;
 }());
-exports.Table = Table;
+exports.SQLTable = SQLTable;
 //# sourceMappingURL=table.js.map

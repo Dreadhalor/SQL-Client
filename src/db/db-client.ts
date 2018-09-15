@@ -1,4 +1,4 @@
-import { Table } from './table';
+import { SQLTable } from './table';
 import { Subject } from 'rxjs';
 
 const db = require('./db');
@@ -10,8 +10,13 @@ let subscriptions = [];
 const history = new Subject<any>();
 exports.history = history.asObservable();
 
-exports.Table = (schema: any) => {
-  let table = new Table(db, schema);
+const Table = exports.Table = (schema: any) => {
+  let table = new SQLTable(db, schema);
   subscriptions.push(table.update.asObservable().subscribe(next => history.next(next)));
   return table;
+}
+const Tables = exports.Tables = (schemas) => {
+  let keys = Object.keys(schemas);
+  keys.forEach(key => schemas[key] = Table(schemas[key]));
+  return schemas;
 }

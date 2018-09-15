@@ -2,6 +2,7 @@ export module TableScriptGenerator {
   const fse = require('fs-extra');
   const replace = require('replace-in-file');
   const path = require('path');
+  const dataType = 'varchar(max)';
 
   const templateStrings = {
     databaseName: /<database_name>/g,
@@ -16,17 +17,17 @@ export module TableScriptGenerator {
 
   exports.generateScripts = (data) => {
     let templateValues = generateTemplateValues(data);
-    let destDirectory = `${data.tablesDirectory}/${data.tableName}`;
+    let destDirectory = `${data.tablesDirectory}/${data.schema.name}`;
     let templateFiles = Object.values<string>(data.templateFiles);
     let destPaths = templateFiles.map(template => {
       let trimIndex = template.lastIndexOf('.template');
       let trimmed = template.substring(0,trimIndex);
-      return `${destDirectory}/${trimmed}_${data.tableName}.sql`;
+      return `${destDirectory}/${trimmed}_${data.schema.name}.sql`;
     })
     let substitutionOptions = {
       files: destPaths,
       from: Object.values(templateStrings),
-      to:Object.values(templateValues)
+      to: Object.values(templateValues)
     };
 
     return fse.ensureDir(destDirectory)
@@ -51,23 +52,23 @@ export module TableScriptGenerator {
   const generateTemplateValues = (data) => {
     let templateValues: any = {
       databaseName: data.database.databaseName,
-      tableName: data.tableName
+      tableName: data.schema.name
     };
 
     let tableInitFields = '';
-    data.columns.forEach((column, index) => {
-      tableInitFields += `[${column.name}] ${data.database.parseDataType('string', true)}`
-      if (index < data.columns.length - 1) tableInitFields += `,\n\t\t`;
+    data.schema.columns.forEach((name, index) => {
+      tableInitFields += `[${name}] ${dataType}`
+      if (index < data.schema.columns.length - 1) tableInitFields += `,\n\t\t`;
     });
     templateValues.tableInitFields = tableInitFields;
 
     let tableSetFields = '', tableInsertFields = '', tableInsertValues = '';
-    data.columns.forEach((column, index) => {
-      let primary = data.columns[index].primary;
-      if (!primary) tableSetFields += `[${column.name}] = @${column.name}`;
-      tableInsertFields += `[${column.name}]`;
-      tableInsertValues += `@${column.name}`;
-      if (index < data.columns.length - 1){
+    data.schema.columns.forEach((name, index) => {
+      let primary = name == data.schema.primary;
+      if (!primary) tableSetFields += `[${name}] = @${name}`;
+      tableInsertFields += `[${name}]`;
+      tableInsertValues += `@${name}`;
+      if (index < data.schema.columns.length - 1){
         if (!primary) tableSetFields += `,\n\t`;
         tableInsertFields += `,\n\t\t`;
         tableInsertValues += `,\n\t\t`;
@@ -76,9 +77,9 @@ export module TableScriptGenerator {
     templateValues.tableSetFields = tableSetFields;
     templateValues.tableInsertFields = tableInsertFields;
     templateValues.tableInsertValues = tableInsertValues;
-    templateValues.primaryKey = data.columns.find(match => match.primary).name;
+    templateValues.primaryKey = data.schema.primary;
 
-    templateValues.triggerName = `update_trigger_${data.tableName}`;
+    templateValues.triggerName = `update_trigger_${data.schema.name}`;
 
     return templateValues;
   }

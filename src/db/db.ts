@@ -64,7 +64,6 @@ export module Database {
     }
   }
 
-  const parseDataType = exports.parseDataType = datatypeParser.parseDataType;
 
 
 
@@ -81,7 +80,7 @@ export module Database {
 
   const preparedStatementWithInputs3 = (info) => {
     let ps = new sql.PreparedStatement();
-    info.columns.forEach(column => ps.input(column.name, parseDataType('string', false)))
+    info.columns.forEach(column => ps.input(column.name, sql.VarChar(sql.MAX)));
     return ps;
   }
   const formatPreparedValues2 = (info: any): any => {
@@ -108,7 +107,7 @@ export module Database {
   const prepareStatementFromColumns = exports.prepareStatementFromColumns = (columns) => {
     let ps = new sql.PreparedStatement();
     columns.forEach(column => {
-      ps.input(column.name, parseDataType('string', false));
+      ps.input(column.name, sql.VarChar(sql.MAX));
     })
     return ps;
   }

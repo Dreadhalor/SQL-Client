@@ -1,14 +1,10 @@
-import { Table } from "../table";
+import { SQLTable } from "../table";
 
 export class TableProcessor {
 
   constructor(
-    private table: Table
+    private table: SQLTable
   ){}
-
-  private shouldStringify(column){
-    return true;//column.dataType.includes('[]') || column.dataType == 'object';
-  }
 
   public processRecordsets(result){
     if (result &&
@@ -19,13 +15,7 @@ export class TableProcessor {
   }
   public formatObject(obj: object): any {
     let result = {};
-    this.table.columns.forEach(column => {
-      let val = obj[column.name];
-      if (this.shouldStringify(column)){
-        val = JSON.stringify(val);
-      }
-      result[column.name] = val;
-    })
+    this.table.schema.columns.forEach(name => result[name] = JSON.stringify(obj[name]));
     return result;
   }
   public parseObjects(objs: object[]){
@@ -34,11 +24,8 @@ export class TableProcessor {
       let parsedObj = {};
       let keys = Object.keys(obj)
       keys.forEach(key => {
-        let found = this.table.columns.find(match => match.name == key);
-        if (found){
-          if (this.shouldStringify(found)) parsedObj[key] = JSON.parse(obj[key]);
-          else parsedObj[key] = obj[key];
-        }
+        let found = this.table.schema.columns.find(match => match == key);
+        if (found) parsedObj[key] = JSON.parse(obj[key]);
       })
       result.push(parsedObj);
     })

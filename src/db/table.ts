@@ -7,16 +7,15 @@ import { TableProcessor } from './table-helpers/table-processor';
 
 const path = require("path");
 
-export class Table {
+export class SQLTable {
 
-  tableName: string;
-  columns: any[] = [];
+  schema: any;
   db: any;
   processor = new TableProcessor(this);
   templateDirectory = path.resolve(__dirname,'scripts/templates/tables');
   tablesDirectory = path.resolve(__dirname,'scripts/generated/tables');
 
-  public update = new Subject<any>();
+  update = new Subject<any>();
 
   getTemplateFiles(){
     let names;
@@ -86,19 +85,12 @@ export class Table {
       })
   }
   get destDirectory(){
-    return `${this.tablesDirectory}/${this.tableName}`;
+    return `${this.tablesDirectory}/${this.schema.name}`;
   }
 
   constructor(db: any, schema: any){
     this.db = db;
-    this.tableName = schema.name;
-    schema.columns.forEach(column => {
-      this.columns.push({
-        name: column.name,
-        primary: !!column.primary
-      });
-    });
-    this.columns = this.singularizePrimaryKey(this.columns);
+    this.schema = schema;
     this.constructTable();
   }
   
@@ -107,8 +99,7 @@ export class Table {
     let scriptFiles;
     scriptGenerator.generateScripts({
       database: this.db,
-      tableName: this.tableName,
-      columns: this.columns,
+      schema: this.schema,
       templateDirectory: this.templateDirectory,
       templateFiles: await this.templateFilesMapped,
       tablesDirectory: this.tablesDirectory,
@@ -140,31 +131,22 @@ export class Table {
     }
     return columns;
   }
-  primaryKey(){
-    let pk = Table.deepCopy(this.columns.find(match => match.primary));
-    return pk;
+  primaryKey(value?){
+    if (value) return {
+      name: this.schema.primary,
+      value: value
+    }
+    return this.schema.primary;
   }
 
-  fields(){
-    return this.columns.map(column => column.name);
-  }
-  oneHotPrimaryKeyArray(){
-    return this.columns.map(column => column.primary);
-  }
   formatRow(obj: any){
-    let columns = this.columns.map(column => {
-      //DEEP COPYING NECESSARY FOR CLOSELY-SPACED EDITS
-      column = Table.deepCopy(column);
-      column.value = obj[column.name];
-      return column;
+    let columns = this.schema.columns.map(columnName => {
+      return {
+        name: columnName,
+        value: obj[columnName]
+      }
     });
     return columns;
-  }
-  tableInfo(){
-    return {
-      tableName: this.tableName,
-      columns: this.columns.map(column => Table.deepCopy(column))
-    };
   }
 
   equals(array1: string[], array2: string[]){
@@ -179,13 +161,13 @@ export class Table {
   saveSingular(item){
     if (!item) throw 'Item is null';
     let itemKeys = Object.keys(item);
-    if (this.equals(itemKeys, this.fields())){
+    if (this.equals(itemKeys, this.schema.columns)){
       let formattedItem = this.processor.formatObject(item)
       let info = {
-        tableName: this.tableName,
+        tableName: this.schema.name,
         columns: this.formatRow(formattedItem)
       };
-      return fse.readFile(`${this.tablesDirectory}/${this.tableName}/save_${this.tableName}.sql`,'utf8')
+      return fse.readFile(`${this.tablesDirectory}/${this.schema.name}/save_${this.schema.name}.sql`,'utf8')
       .then(file => this.db.prepareQueryAndExecute(file,info))
       .then(executed => this.processor.processRecordsets(executed))
       .then(processed => {
@@ -249,7 +231,7 @@ export class Table {
     return this.saveMultiple(items)
       .then(result => {
         if (result){
-          result.table = this.tableName;
+          result.table = this.schema.name;
           if (agent) result.agent = agent;
           this.update.next(result);
         }
@@ -258,33 +240,31 @@ export class Table {
   }
   findById(id: string){
     let columns = [];
-    let pk = this.primaryKey();
-    pk.value = JSON.stringify(id);
+    let pk = this.primaryKey(JSON.stringify(id));
     columns.push(pk);
-    return fse.readFile(`${this.tablesDirectory}/${this.tableName}/pull_by_id_${this.tableName}.sql`,'utf8')
+    return fse.readFile(`${this.tablesDirectory}/${this.schema.name}/pull_by_id_${this.schema.name}.sql`,'utf8')
       .then(query => this.db.prepareQueryFromColumnsAndExecute(query,columns))
       .then(found => {
        return  this.processor.processRecordsets(found)[0]
       });
   }
   pullAll(){
-    return fse.readFile(`${this.tablesDirectory}/${this.tableName}/pull_all_${this.tableName}.sql`,'utf8')
+    return fse.readFile(`${this.tablesDirectory}/${this.schema.name}/pull_all_${this.schema.name}.sql`,'utf8')
       .then(query => this.db.executeQueryAsPreparedStatement(query))
       .then(pulled => this.processor.processRecordsets(pulled));
   }
   deleteById(id: string, agent?){
     let columns = [];
-    let pk = this.primaryKey();
-    pk.value = JSON.stringify(id);
+    let pk = this.primaryKey(JSON.stringify(id));
     columns.push(pk);
-    return fse.readFile(`${this.tablesDirectory}/${this.tableName}/delete_by_id_${this.tableName}.sql`,'utf8')
+    return fse.readFile(`${this.tablesDirectory}/${this.schema.name}/delete_by_id_${this.schema.name}.sql`,'utf8')
       .then(query => this.db.prepareQueryFromColumnsAndExecute(query,columns))
       .then(deleted => this.processor.processRecordsets(deleted))
       .then(processed => {
         let array = [];
         array.push(processed[0]);
         let result: any = {
-          table: this.tableName,
+          table: this.schema.name,
           operation: 'delete',
           deleted: array
         };
@@ -295,10 +275,9 @@ export class Table {
   }
   deleteSingularById(id: string){
     let columns = [];
-    let pk = this.primaryKey();
-    pk.value = JSON.stringify(id);
+    let pk = this.primaryKey(JSON.stringify(id));
     columns.push(pk);
-    return fse.readFile(`${this.tablesDirectory}/${this.tableName}/delete_by_id_${this.tableName}.sql`,'utf8')
+    return fse.readFile(`${this.tablesDirectory}/${this.schema.name}/delete_by_id_${this.schema.name}.sql`,'utf8')
       .then(query => this.db.prepareQueryFromColumnsAndExecute(query,columns))
       .then(deleted => this.processor.processRecordsets(deleted))
       .then(processed => {
@@ -355,7 +334,7 @@ export class Table {
             } else if (saved) result = saved;
             else if (deleted) result = deleted;
             if (result){
-              result.table = this.tableName;
+              result.table = this.schema.name;
               if (agent) result.agent = agent;
               this.update.next(result);
             }
@@ -365,7 +344,7 @@ export class Table {
     } else throw 'No items to modify.'
   }
 
-  public static deepCopy(obj) {
+  static deepCopy(obj) {
     var copy;
     // Handle the 3 simple types, and null or undefined
     if (null == obj || "object" != typeof obj) return obj;
