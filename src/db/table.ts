@@ -91,7 +91,7 @@ export class Table {
 
   constructor(db: any, schema: any){
     this.db = db;
-    this.tableName = schema.tableName;
+    this.tableName = schema.name;
     schema.columns.forEach(column => {
       this.columns.push({
         name: column.name,
