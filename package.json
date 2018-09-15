@@ -1,8 +1,8 @@
 {
-  "name": "sql-client",
+  "name": "@dreadhalor/sql-client",
   "version": "1.0.0",
   "description": "A client to make interacting with a SQL database easy.",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch-ts": "tsc -w",
@@ -20,13 +20,20 @@
   },
   "homepage": "https://github.com/Dreadhalor/SQL-Client#readme",
   "dependencies": {
-    "@dreadhalor/bluebird-plus": "^1.0.2"
+    "@dreadhalor/bluebird-plus": "^1.0.3",
+    "fs-extra": "^7.0.0",
+    "msnodesqlv8": "^0.6.8",
+    "mssql": "^4.2.1",
+    "replace-in-file": "^3.4.2",
+    "rxjs": "^6.3.2"
   },
   "devDependencies": {
+    "@types/fs-extra": "^5.0.4",
+    "@types/mssql": "^4.0.10",
     "@types/node": "^10.9.4",
     "concurrently": "^4.0.1",
     "nodemon": "^1.18.4",
     "typescript": "^3.0.3",
-    "yarn": "^1.9.4"
+    "yarn": "^1.10.0"
   }
 }
