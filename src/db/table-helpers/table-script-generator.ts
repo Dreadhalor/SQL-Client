@@ -56,7 +56,7 @@ export module TableScriptGenerator {
 
     let tableInitFields = '';
     data.columns.forEach((column, index) => {
-      tableInitFields += `[${column.name}] ${data.database.parseDataType(column.dataType, true)}`
+      tableInitFields += `[${column.name}] ${data.database.parseDataType('string', true)}`
       if (index < data.columns.length - 1) tableInitFields += `,\n\t\t`;
     });
     templateValues.tableInitFields = tableInitFields;

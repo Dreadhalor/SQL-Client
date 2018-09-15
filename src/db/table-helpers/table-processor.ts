@@ -7,7 +7,7 @@ export class TableProcessor {
   ){}
 
   private shouldStringify(column){
-    return column.dataType.includes('[]') || column.dataType == 'object';
+    return true;//column.dataType.includes('[]') || column.dataType == 'object';
   }
 
   public processRecordsets(result){

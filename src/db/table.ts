@@ -95,7 +95,6 @@ export class Table {
     schema.columns.forEach(column => {
       this.columns.push({
         name: column.name,
-        dataType: column.dataType,
         primary: !!column.primary
       });
     });
