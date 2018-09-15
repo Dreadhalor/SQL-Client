@@ -155,7 +155,7 @@ export class Table {
     let columns = this.columns.map(column => {
       //DEEP COPYING NECESSARY FOR CLOSELY-SPACED EDITS
       column = Table.deepCopy(column);
-      column.value = obj[column.name];
+      column.value = JSON.stringify(obj[column.name]);
       return column;
     });
     return columns;
