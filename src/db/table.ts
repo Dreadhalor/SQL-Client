@@ -313,35 +313,33 @@ export class SQLTable {
     } else throw 'No items specified to delete.'
   }
   merge(items, agent?){
-    if (items){
-      let toSave = items.toSave;
-      let toDelete = items.toDelete;
-      if ((toSave && Array.isArray(toSave)) || (toDelete && Array.isArray(toDelete))){
-        let saved, deleted, result;
-        saved = this.saveMultiple(toSave);
-        deleted = this.deleteMultipleByIds(toDelete);
-        return Promise.all([saved, deleted])
-          .then(success => {
-            saved = success[0];
-            deleted = success[1];
-            if (saved && deleted){
-              result = {
-                operation: (`${saved.operation} ${deleted.operation}`).trim(),
-                created: saved.created,
-                updated: saved.updated,
-                deleted: deleted.deleted
-              }
-            } else if (saved) result = saved;
-            else if (deleted) result = deleted;
-            if (result){
-              result.table = this.schema.name;
-              if (agent) result.agent = agent;
-              this.update.next(result);
+    let toSave = items.toSave;
+    let toDelete = items.toDelete;
+    if ((toSave && Array.isArray(toSave)) || (toDelete && Array.isArray(toDelete))){
+      let saved, deleted, result;
+      saved = this.saveMultiple(toSave);
+      deleted = this.deleteMultipleByIds(toDelete);
+      return Promise.all([saved, deleted])
+        .then(success => {
+          saved = success[0];
+          deleted = success[1];
+          if (saved && deleted){
+            result = {
+              operation: (`${saved.operation} ${deleted.operation}`).trim(),
+              created: saved.created,
+              updated: saved.updated,
+              deleted: deleted.deleted
             }
-            return result;
-          })
-      } else throw 'Incorrect format.'
-    } else throw 'No items to modify.'
+          } else if (saved) result = saved;
+          else if (deleted) result = deleted;
+          if (result){
+            result.table = this.schema.name;
+            if (agent) result.agent = agent;
+            this.update.next(result);
+          }
+          return result;
+        })
+    } else throw 'Incorrect format.'
   }
 
   static deepCopy(obj) {

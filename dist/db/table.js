@@ -383,43 +383,39 @@ var SQLTable = /** @class */ (function () {
     };
     SQLTable.prototype.merge = function (items, agent) {
         var _this = this;
-        if (items) {
-            var toSave = items.toSave;
-            var toDelete = items.toDelete;
-            if ((toSave && Array.isArray(toSave)) || (toDelete && Array.isArray(toDelete))) {
-                var saved_1, deleted_1, result_1;
-                saved_1 = this.saveMultiple(toSave);
-                deleted_1 = this.deleteMultipleByIds(toDelete);
-                return Promise.all([saved_1, deleted_1])
-                    .then(function (success) {
-                    saved_1 = success[0];
-                    deleted_1 = success[1];
-                    if (saved_1 && deleted_1) {
-                        result_1 = {
-                            operation: (saved_1.operation + " " + deleted_1.operation).trim(),
-                            created: saved_1.created,
-                            updated: saved_1.updated,
-                            deleted: deleted_1.deleted
-                        };
-                    }
-                    else if (saved_1)
-                        result_1 = saved_1;
-                    else if (deleted_1)
-                        result_1 = deleted_1;
-                    if (result_1) {
-                        result_1.table = _this.schema.name;
-                        if (agent)
-                            result_1.agent = agent;
-                        _this.update.next(result_1);
-                    }
-                    return result_1;
-                });
-            }
-            else
-                throw 'Incorrect format.';
+        var toSave = items.toSave;
+        var toDelete = items.toDelete;
+        if ((toSave && Array.isArray(toSave)) || (toDelete && Array.isArray(toDelete))) {
+            var saved_1, deleted_1, result_1;
+            saved_1 = this.saveMultiple(toSave);
+            deleted_1 = this.deleteMultipleByIds(toDelete);
+            return Promise.all([saved_1, deleted_1])
+                .then(function (success) {
+                saved_1 = success[0];
+                deleted_1 = success[1];
+                if (saved_1 && deleted_1) {
+                    result_1 = {
+                        operation: (saved_1.operation + " " + deleted_1.operation).trim(),
+                        created: saved_1.created,
+                        updated: saved_1.updated,
+                        deleted: deleted_1.deleted
+                    };
+                }
+                else if (saved_1)
+                    result_1 = saved_1;
+                else if (deleted_1)
+                    result_1 = deleted_1;
+                if (result_1) {
+                    result_1.table = _this.schema.name;
+                    if (agent)
+                        result_1.agent = agent;
+                    _this.update.next(result_1);
+                }
+                return result_1;
+            });
         }
         else
-            throw 'No items to modify.';
+            throw 'Incorrect format.';
     };
     SQLTable.deepCopy = function (obj) {
         var copy;
