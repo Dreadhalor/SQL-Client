@@ -1,6 +1,6 @@
 {
   "name": "@dreadhalor/sql-client",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A client to make interacting with a SQL database easy.",
   "main": "dist/index.js",
   "files": [
