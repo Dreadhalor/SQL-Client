@@ -5,8 +5,9 @@ export module Database {
   const promisify = require('util').promisify;
   const datatypeParser = require('./db-helpers/datatype-parser');
   const path = require('path');
+  const sqlClient = require('./sql-client');
 
-  let databaseName = exports.databaseName;
+  let name = exports.name;
   let connected = false;
   let callbacks = [];
   let config;
@@ -19,13 +20,13 @@ export module Database {
     config = configuration;
 
     setDatabaseName(config.database);
-    let destFile = `create_database_${databaseName}.sql`;
+    let destFile = `create_database_${name}.sql`;
     let destPath = `${destDirectory}/${destFile}`;
     let srcPath = `${srcDirectory}/create_database.template.sql`;
     const substitutionOptions = {
       files: destPath,
       from: /<database_name>/g,
-      to: databaseName
+      to: name
     };
     config.database = 'master';
     return sql.connect(config)
@@ -34,10 +35,10 @@ export module Database {
       .then(emptied => fse.copy(srcPath, destPath))
       .then(copied => replace(substitutionOptions))
       .then(replaced => fse.readFile(destPath,'utf8'))
-      .then(query => executeQueryAsPreparedStatementOnMaster(query))
+      .then(query => sqlClient.prepareStatementAndExecute(query))
       .then(
         dbExists => {
-          config.database = databaseName;
+          config.database = name;
           return sql.close();
         }
       )
@@ -45,9 +46,9 @@ export module Database {
       .then(connected => hasConnected());
 
   }
-  const setDatabaseName = (name) => {
-    databaseName = name;
-    exports.databaseName = databaseName;
+  const setDatabaseName = (dbName) => {
+    name = dbName;
+    exports.name = name;
   }
   const onConnected = exports.onConnected = (fxn) => {
     if (fxn){
@@ -62,75 +63,5 @@ export module Database {
       callbacks[i](connected);
       callbacks.splice(i,1);
     }
-  }
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-  const preparedStatementWithInputs3 = (info) => {
-    let ps = new sql.PreparedStatement();
-    info.columns.forEach(column => ps.input(column.name, sql.VarChar(sql.MAX)));
-    return ps;
-  }
-  const formatPreparedValues2 = (info: any): any => {
-    let result = {};
-    info.columns.forEach(column => result[column.name] = column.value);
-    return result;
-  }
-
-  
-
-
-  /////
-
-  const prepareQueryFromColumnsAndExecute = exports.prepareQueryFromColumnsAndExecute = (query, columns) => {
-    let ps = prepareStatementFromColumns(columns);
-    let values = formatPreparedValuesFromColumns(columns);
-    return executePreparedStatement(ps, query, values);
-  }
-  const formatPreparedValuesFromColumns = (columns) => {
-    let result = {};
-    columns.forEach(column => result[column.name] = column.value);
-    return result;
-  }
-  const prepareStatementFromColumns = exports.prepareStatementFromColumns = (columns) => {
-    let ps = new sql.PreparedStatement();
-    columns.forEach(column => {
-      ps.input(column.name, sql.VarChar(sql.MAX));
-    })
-    return ps;
-  }
-  const executeQueryAsPreparedStatement = exports.executeQueryAsPreparedStatement = (query: string) => {
-    return executePreparedStatement(new sql.PreparedStatement(),query,{});
-  }
-  const executeQueryAsPreparedStatementOnMaster = (query: string) => {
-    return executePreparedStatement(new sql.PreparedStatement(),query,{});
-  }
-  const executePreparedStatement = (ps: any, str: string, vals: any) => {
-    let result;
-    return ps.prepare(str)
-    .catch(error => console.log(error))
-      .then(prepared => ps.execute(vals))
-      .then(executed => {
-        result = executed;
-        return ps.unprepare();
-      })
-      .then(unprepared => result);
-  }
-  const prepareQueryAndExecute = exports.prepareQueryAndExecute = (query, info) => {
-    let ps = preparedStatementWithInputs3(info);
-    let values = formatPreparedValues2(info);
-    return executePreparedStatement(ps, query, values);
   }
 }

@@ -8,7 +8,8 @@ var Database;
     var promisify = require('util').promisify;
     var datatypeParser = require('./db-helpers/datatype-parser');
     var path = require('path');
-    var databaseName = exports.databaseName;
+    var sqlClient = require('./sql-client');
+    var name = exports.name;
     var connected = false;
     var callbacks = [];
     var config;
@@ -17,13 +18,13 @@ var Database;
     module.exports.connect = function (configuration) {
         config = configuration;
         setDatabaseName(config.database);
-        var destFile = "create_database_" + databaseName + ".sql";
+        var destFile = "create_database_" + name + ".sql";
         var destPath = destDirectory + "/" + destFile;
         var srcPath = srcDirectory + "/create_database.template.sql";
         var substitutionOptions = {
             files: destPath,
             from: /<database_name>/g,
-            to: databaseName
+            to: name
         };
         config.database = 'master';
         return sql.connect(config)
@@ -32,17 +33,17 @@ var Database;
             .then(function (emptied) { return fse.copy(srcPath, destPath); })
             .then(function (copied) { return replace(substitutionOptions); })
             .then(function (replaced) { return fse.readFile(destPath, 'utf8'); })
-            .then(function (query) { return executeQueryAsPreparedStatementOnMaster(query); })
+            .then(function (query) { return sqlClient.prepareStatementAndExecute(query); })
             .then(function (dbExists) {
-            config.database = databaseName;
+            config.database = name;
             return sql.close();
         })
             .then(function (closed) { return sql.connect(config); })
             .then(function (connected) { return hasConnected(); });
     };
-    var setDatabaseName = function (name) {
-        databaseName = name;
-        exports.databaseName = databaseName;
+    var setDatabaseName = function (dbName) {
+        name = dbName;
+        exports.name = name;
     };
     var onConnected = exports.onConnected = function (fxn) {
         if (fxn) {
@@ -59,56 +60,6 @@ var Database;
             callbacks[i](connected);
             callbacks.splice(i, 1);
         }
-    };
-    var preparedStatementWithInputs3 = function (info) {
-        var ps = new sql.PreparedStatement();
-        info.columns.forEach(function (column) { return ps.input(column.name, sql.VarChar(sql.MAX)); });
-        return ps;
-    };
-    var formatPreparedValues2 = function (info) {
-        var result = {};
-        info.columns.forEach(function (column) { return result[column.name] = column.value; });
-        return result;
-    };
-    /////
-    var prepareQueryFromColumnsAndExecute = exports.prepareQueryFromColumnsAndExecute = function (query, columns) {
-        var ps = prepareStatementFromColumns(columns);
-        var values = formatPreparedValuesFromColumns(columns);
-        return executePreparedStatement(ps, query, values);
-    };
-    var formatPreparedValuesFromColumns = function (columns) {
-        var result = {};
-        columns.forEach(function (column) { return result[column.name] = column.value; });
-        return result;
-    };
-    var prepareStatementFromColumns = exports.prepareStatementFromColumns = function (columns) {
-        var ps = new sql.PreparedStatement();
-        columns.forEach(function (column) {
-            ps.input(column.name, sql.VarChar(sql.MAX));
-        });
-        return ps;
-    };
-    var executeQueryAsPreparedStatement = exports.executeQueryAsPreparedStatement = function (query) {
-        return executePreparedStatement(new sql.PreparedStatement(), query, {});
-    };
-    var executeQueryAsPreparedStatementOnMaster = function (query) {
-        return executePreparedStatement(new sql.PreparedStatement(), query, {});
-    };
-    var executePreparedStatement = function (ps, str, vals) {
-        var result;
-        return ps.prepare(str)
-            .catch(function (error) { return console.log(error); })
-            .then(function (prepared) { return ps.execute(vals); })
-            .then(function (executed) {
-            result = executed;
-            return ps.unprepare();
-        })
-            .then(function (unprepared) { return result; });
-    };
-    var prepareQueryAndExecute = exports.prepareQueryAndExecute = function (query, info) {
-        var ps = preparedStatementWithInputs3(info);
-        var values = formatPreparedValues2(info);
-        return executePreparedStatement(ps, query, values);
     };
 })(Database = exports.Database || (exports.Database = {}));
 //# sourceMappingURL=db.js.map

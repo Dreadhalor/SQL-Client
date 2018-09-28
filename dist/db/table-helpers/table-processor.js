@@ -1,29 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var TableProcessor = /** @class */ (function () {
-    function TableProcessor(table) {
-        this.table = table;
-    }
-    TableProcessor.prototype.processRecordsets = function (result) {
+var TableProcessor;
+(function (TableProcessor) {
+    var processRecordsets = exports.processRecordsets = function (result, columns) {
         if (result &&
             result.recordset &&
             result.recordset.length > 0)
-            return this.parseObjects(result.recordset);
+            return parseObjects(result.recordset, columns);
         return [];
     };
-    TableProcessor.prototype.formatObject = function (obj) {
+    var formatObject = exports.formatObject = function (obj, columns) {
         var result = {};
-        this.table.schema.columns.forEach(function (name) { return result[name] = JSON.stringify(obj[name]); });
+        columns.forEach(function (name) { return result[name] = JSON.stringify(obj[name]); });
         return result;
     };
-    TableProcessor.prototype.parseObjects = function (objs) {
-        var _this = this;
+    var parseObjects = function (objs, columns) {
         var result = [];
         objs.forEach(function (obj) {
             var parsedObj = {};
             var keys = Object.keys(obj);
             keys.forEach(function (key) {
-                var found = _this.table.schema.columns.find(function (match) { return match == key; });
+                var found = columns.find(function (match) { return match == key; });
                 if (found)
                     parsedObj[key] = JSON.parse(obj[key]);
             });
@@ -31,7 +28,5 @@ var TableProcessor = /** @class */ (function () {
         });
         return result;
     };
-    return TableProcessor;
-}());
-exports.TableProcessor = TableProcessor;
+})(TableProcessor = exports.TableProcessor || (exports.TableProcessor = {}));
 //# sourceMappingURL=table-processor.js.map
