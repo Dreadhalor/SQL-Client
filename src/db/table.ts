@@ -6,6 +6,7 @@ const scriptGenerator = require('./table-helpers/script-generator');
 const processor = require('./table-helpers/processor');
 const saveOps = require('./table-helpers/save-ops');
 const deleteOps = require('./table-helpers/delete-ops');
+const readOps = require('./table-helpers/read-ops');
 const constructor = require('./table-helpers/constructor');
 
 const sqlClient = require('./sql-client');
@@ -56,19 +57,15 @@ export class SQLTable {
   }
 
   findById(id: string){
-    let columns = [];
-    let pk = this.primaryKey(JSON.stringify(id));
-    columns.push(pk);
-    return fse.readFile(`${tablesDirectory}/${this.schema.name}/pull_by_id_${this.schema.name}.sql`,'utf8')
-      .then(query => sqlClient.prepareStatementAndExecute(query,columns))
-      .then(found => {
-       return  processor.processRecordsets(found, this.schema.columns)[0]
-      });
+    return readOps.pullByField(id, this.schema.primary, this.schema.name)
+      .then(found => processor.processRecordsets(found, this.schema.columns)[0]);
   }
   pullAll(){
-    return fse.readFile(`${tablesDirectory}/${this.schema.name}/pull_all_${this.schema.name}.sql`,'utf8')
-      .then(query => sqlClient.prepareStatementAndExecute(query))
-      .then(pulled => processor.processRecordsets(pulled, this.schema.columns));
+    return readOps.pullAll(this.schema.name)
+      .then(pulled => {
+        console.log(pulled);
+        return processor.processRecordsets(pulled, this.schema.columns)
+      });
   }
   
   merge(items, agent?){

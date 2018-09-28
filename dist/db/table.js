@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var fse = require("fs-extra");
 var PromisePlus = require('@dreadhalor/bluebird-plus');
 var scriptGenerator = require('./table-helpers/script-generator');
 var processor = require('./table-helpers/processor');
 var saveOps = require('./table-helpers/save-ops');
 var deleteOps = require('./table-helpers/delete-ops');
+var readOps = require('./table-helpers/read-ops');
 var constructor = require('./table-helpers/constructor');
 var sqlClient = require('./sql-client');
 var path = require('path');
@@ -47,20 +47,16 @@ var SQLTable = /** @class */ (function () {
     };
     SQLTable.prototype.findById = function (id) {
         var _this = this;
-        var columns = [];
-        var pk = this.primaryKey(JSON.stringify(id));
-        columns.push(pk);
-        return fse.readFile(tablesDirectory + "/" + this.schema.name + "/pull_by_id_" + this.schema.name + ".sql", 'utf8')
-            .then(function (query) { return sqlClient.prepareStatementAndExecute(query, columns); })
-            .then(function (found) {
-            return processor.processRecordsets(found, _this.schema.columns)[0];
-        });
+        return readOps.pullByField(id, this.schema.primary, this.schema.name)
+            .then(function (found) { return processor.processRecordsets(found, _this.schema.columns)[0]; });
     };
     SQLTable.prototype.pullAll = function () {
         var _this = this;
-        return fse.readFile(tablesDirectory + "/" + this.schema.name + "/pull_all_" + this.schema.name + ".sql", 'utf8')
-            .then(function (query) { return sqlClient.prepareStatementAndExecute(query); })
-            .then(function (pulled) { return processor.processRecordsets(pulled, _this.schema.columns); });
+        return readOps.pullAll(this.schema.name)
+            .then(function (pulled) {
+            console.log(pulled);
+            return processor.processRecordsets(pulled, _this.schema.columns);
+        });
     };
     SQLTable.prototype.merge = function (items, agent) {
         var toSave = items.toSave;
