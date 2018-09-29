@@ -5,7 +5,8 @@ export module Database {
   const promisify = require('util').promisify;
   const datatypeParser = require('./db-helpers/datatype-parser');
   const path = require('path');
-  const sqlClient = require('./sql-client');
+  const sqlClient = require('./sql');
+  const util = require('util');
 
   let name = exports.name;
   let connected = false;
@@ -63,5 +64,42 @@ export module Database {
       callbacks[i](connected);
       callbacks.splice(i,1);
     }
+  }
+
+  const all = exports.all = (promiseFxns: any[]) => {
+    if (promiseFxns.length > 0){
+      return Promise.all(promiseFxns)
+      .then(results => {
+        for (let i = results.length; i >= 0; i--) if (!results[i]) results.splice(i,1);
+        let tables = [];
+        results.forEach(entry => {
+          let index = tables.findIndex(match => match.table == entry.table);
+          let table = (index >= 0) ? tables[index] : {
+            table: entry.table,
+            info: {}
+          };
+          let created = table.info.created, updated = table.info.updated, deleted = table.info.deleted;
+          if (entry.info.created){
+            if (!created) created = [];
+            created = created.concat(entry.info.created)
+          };
+          if (entry.info.updated){
+            if (!updated) updated = [];
+            updated = updated.concat(entry.info.updated)
+          };
+          if (entry.info.deleted){
+            if (!deleted) deleted = [];
+            deleted = deleted.concat(entry.info.deleted)
+          };
+          table.info = {};
+          if (created) table.info.created = created;
+          if (updated) table.info.updated = updated;
+          if (deleted) table.info.deleted = deleted;
+          if (index >= 0) tables[index] = table;
+          else tables.push(table);
+        })
+        return tables;
+      });
+    } return null;
   }
 }

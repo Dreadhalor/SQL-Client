@@ -13,9 +13,7 @@ export module SQLClient {
   }
   const prepareStatement = (columns) => {
     let ps = new sql.PreparedStatement();
-    columns.forEach(column => {
-      ps.input(column.name, sql.VarChar(sql.MAX));
-    })
+    columns.forEach(column => ps.input(column.name, sql.VarChar(sql.MAX)));
     return ps;
   }
 

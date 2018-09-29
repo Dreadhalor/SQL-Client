@@ -13,18 +13,15 @@ export module ReadOps {
       name: field,
       value: value
     });
-    return fse.readFile(paths.getQuery('pull_by_field',table),'utf8')
+    return fse.readFile(paths.getQuery(table, 'pull_by_field'),'utf8')
       .then(query => {
         query = query.replace(/<field>/g, field);
         return sqlClient.prepareStatementAndExecute(query,columns)
       })
   }
   const pullAll = exports.pullAll = (table: string) => {
-    return fse.readFile(paths.getQuery('pull_all',table),'utf8')
-      .then(query => {
-        console.log(query);
-        sqlClient.prepareStatementAndExecute(query)
-      });
+    return fse.readFile(paths.getQuery(table, 'pull_all'),'utf8')
+      .then(query => sqlClient.prepareStatementAndExecute(query));
   }
 
 }

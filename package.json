@@ -26,15 +26,19 @@
   "dependencies": {
     "@dreadhalor/bluebird-plus": "^1.0.4",
     "fs-extra": "^7.0.0",
+    "moment": "^2.22.2",
     "msnodesqlv8": "^0.6.8",
     "mssql": "^4.2.1",
     "replace-in-file": "^3.4.2",
-    "rxjs": "^6.3.2"
+    "rxjs": "^6.3.2",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "@types/fs-extra": "^5.0.4",
+    "@types/moment": "^2.13.0",
     "@types/mssql": "^4.0.10",
     "@types/node": "^10.9.4",
+    "@types/uuid": "^3.4.4",
     "concurrently": "^4.0.1",
     "nodemon": "^1.18.4",
     "typescript": "^3.0.3",
