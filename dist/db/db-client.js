@@ -13,7 +13,7 @@ exports.history = history.asObservable();
 var Table = exports.Table = function (schema) {
     var table = new table_1.SQLTable(db, schema);
     subscriptions.push(table.update.asObservable().subscribe(function (next) {
-        next = formatStandaloneEdit(next);
+        next = formatStandaloneEdit(next, null);
         //history.next(next)
     }));
     return table;
@@ -23,15 +23,18 @@ var Tables = exports.Tables = function (schemas) {
     keys.forEach(function (key) { return schemas[key] = Table(schemas[key]); });
     return schemas;
 };
-var formatStandaloneEdit = function (edit) {
+var formatStandaloneEdit = function (edit, options) {
     var id = uuid();
     var timestamp = moment().format('dddd, MMMM Do YYYY, h:mm:ss a');
     if (edit) {
-        return {
+        var result = {
             transactionId: id,
             timestamp: timestamp,
             tables: edit
         };
+        if (options.agent)
+            result.agent = options.agent;
+        return result;
     }
     return null;
 };
@@ -88,7 +91,7 @@ var all = exports.all = function (promiseFxns, options) {
             });
             if (options) {
                 if (options.standalone)
-                    history.next(formatStandaloneEdit(tables));
+                    history.next(formatStandaloneEdit(tables, options));
             }
             return tables;
         });

@@ -16,7 +16,7 @@ exports.history = history.asObservable();
 const Table = exports.Table = (schema: any) => {
   let table = new SQLTable(db, schema);
   subscriptions.push(table.update.asObservable().subscribe(next => {
-    next = formatStandaloneEdit(next);
+    next = formatStandaloneEdit(next, null);
     //history.next(next)
   }));
   return table;
@@ -27,15 +27,17 @@ const Tables = exports.Tables = (schemas) => {
   return schemas;
 }
 
-const formatStandaloneEdit = (edit) => {
+const formatStandaloneEdit = (edit, options) => {
   let id = uuid();
   let timestamp = moment().format('dddd, MMMM Do YYYY, h:mm:ss a')
   if (edit) {
-    return {
+    let result: any = {
       transactionId: id,
       timestamp: timestamp,
       tables: edit
     };
+    if (options.agent) result.agent = options.agent;
+    return result;
   }
   return null;
 }
@@ -80,7 +82,7 @@ const all = exports.all = (promiseFxns: any[], options?: any) => {
         else tables.push(table);
       })
       if (options){
-        if (options.standalone) history.next(formatStandaloneEdit(tables));
+        if (options.standalone) history.next(formatStandaloneEdit(tables, options));
       }
       return tables;
     });
